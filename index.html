@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Science Cheat Sheet</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Data Science Cheat Sheet</h1>
+    </header>
+
+    <section id="data-inspection">
+        <h2>2.1–2.4: Data Import and Inspection</h2>
+        <p>Use pandas.read_csv() to import and overwrite column names:</p>
+        <pre><code>import pandas as pd
+df = pd.read_csv('data.csv', header=0)</code></pre>
+        <p>Inspect the data using:</p>
+        <pre><code>df.head(20)</code></pre>
+        <pre><code>df.describe()</code></pre>
+        <pre><code>df.dtypes</code></pre>
+        <p>Check the shape and size:</p>
+        <pre><code>df.shape</code></pre>
+        <pre><code>df.size</code></pre>
+    </section>
+
+    <section id="game-outcomes">
+        <h2>2.5–2.8: Player Ratings and Game Outcomes</h2>
+        <p>Use <code>min()</code> and <code>max()</code> on player rating columns:</p>
+        <pre><code>df['player_rating'].min()</code></pre>
+        <pre><code>df['player_rating'].max()</code></pre>
+        <p>Filter games ending in "mate" and calculate percentages:</p>
+        <pre><code>mate_games = df[df['game_outcome'].str.endswith('mate')]
+mate_percentage = len(mate_games) / len(df) * 100</code></pre>
+        <p>Plot pie chart of game outcomes:</p>
+        <pre><code>import matplotlib.pyplot as plt
+game_outcome_counts = df['game_outcome'].value_counts()
+plt.pie(game_outcome_counts, labels=game_outcome_counts.index, autopct="%.0f%%")
+plt.show()</code></pre>
+    </section>
+
+    <section id="game-analysis">
+        <h2>2.9–2.14: Game Analysis</h2>
+        <p>Group by winner and count games:</p>
+        <pre><code>winner_counts = df.groupby('winner').size()</code></pre>
+        <p>Filter losses and calculate resignation percentage:</p>
+        <pre><code>losses = df[df['game_outcome'] == 'Loss']
+resignation_percentage = len(losses[losses['resigned'] == True]) / len(losses) * 100</code></pre>
+        <p>Compute mean moves for draws:</p>
+        <pre><code>draws = df[df['game_outcome'] == 'Draw']
+mean_moves = draws['moves'].mean()</code></pre>
+        <p>Discuss balancing:</p>
+        <p>In game analysis, it's important to balance data (e.g., oversampling minority classes) to avoid losing data that can improve model accuracy.</p>
+    </section>
+
+    <section id="preprocessing">
+        <h2>2.15–2.23: Preprocessing</h2>
+        <p>Check for missing values:</p>
+        <pre><code>df.isna().sum()</code></pre>
+        <p>Impute missing values (e.g., median for ratings):</p>
+        <pre><code>df['rating'].fillna(df['rating'].median(), inplace=True)</code></pre>
+        <p>Drop unnecessary columns:</p>
+        <pre><code>df.drop(['unwanted_column'], axis=1, inplace=True)</code></pre>
+        <p>Convert text to numeric using one-hot encoding:</p>
+        <pre><code>df = pd.get_dummies(df, columns=['column_name'])</code></pre>
+        <p>Plot a correlation heatmap:</p>
+        <pre><code>import seaborn as sns
+import matplotlib.pyplot as plt
+sns.heatmap(df.corr(), annot=True, cmap='coolwarm')
+plt.show()</code></pre>
+        <p>Scale data:</p>
+        <pre><code>from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+df_scaled = scaler.fit_transform(df)</code></pre>
+        <p>Export to CSV:</p>
+        <pre><code>df.to_csv('processed_data.csv', index=False)</code></pre>
+    </section>
+
+    <footer>
+        <p>Created by Amogelang Seipone</p>
+    </footer>
+</body>
+</html>
