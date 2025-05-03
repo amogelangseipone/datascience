@@ -13,68 +13,115 @@
 
     <section id="data-inspection">
         <h2>2.1–2.4: Data Import and Inspection</h2>
-        <p>Use pandas.read_csv() to import and overwrite column names:</p>
-        <pre><code>import pandas as pd
-df = pd.read_csv('data.csv', header=0)</code></pre>
-        <p>Inspect the data using:</p>
-        <pre><code>df.head(20)</code></pre>
-        <pre><code>df.describe()</code></pre>
-        <pre><code>df.dtypes</code></pre>
-        <p>Check the shape and size:</p>
-        <pre><code>df.shape</code></pre>
-        <pre><code>df.size</code></pre>
+        <p>Some business intelligence tools include
+Dashboards
+Portals
+Data analysis and reporting tools
+Data mining tools
+Data warehouses
+OLAP tools
+Data visualization
+</p>
+        
     </section>
 
     <section id="game-outcomes">
-        <h2>2.5–2.8: Player Ratings and Game Outcomes</h2>
-        <p>Use <code>min()</code> and <code>max()</code> on player rating columns:</p>
-        <pre><code>df['player_rating'].min()</code></pre>
-        <pre><code>df['player_rating'].max()</code></pre>
-        <p>Filter games ending in "mate" and calculate percentages:</p>
-        <pre><code>mate_games = df[df['game_outcome'].str.endswith('mate')]
-mate_percentage = len(mate_games) / len(df) * 100</code></pre>
-        <p>Plot pie chart of game outcomes:</p>
-        <pre><code>import matplotlib.pyplot as plt
-game_outcome_counts = df['game_outcome'].value_counts()
-plt.pie(game_outcome_counts, labels=game_outcome_counts.index, autopct="%.0f%%")
-plt.show()</code></pre>
+        <h2>BI Benefits</h2>
+        <p>Main goal: improved decision making
+Other benefits
+Integrating architecture
+Common user interface for data reporting and analysis
+Common data repository fosters single version of company data
+Improved organizational performance
+</p>
+        
     </section>
 
     <section id="game-analysis">
         <h2>2.9–2.14: Game Analysis</h2>
-        <p>Group by winner and count games:</p>
-        <pre><code>winner_counts = df.groupby('winner').size()</code></pre>
-        <p>Filter losses and calculate resignation percentage:</p>
-        <pre><code>losses = df[df['game_outcome'] == 'Loss']
-resignation_percentage = len(losses[losses['resigned'] == True]) / len(losses) * 100</code></pre>
-        <p>Compute mean moves for draws:</p>
-        <pre><code>draws = df[df['game_outcome'] == 'Draw']
-mean_moves = draws['moves'].mean()</code></pre>
-        <p>Discuss balancing:</p>
-        <p>In game analysis, it's important to balance data (e.g., oversampling minority classes) to avoid losing data that can improve model accuracy.</p>
-    </section>
+        <p>Integrated, subject-oriented, time-variant, and nonvolatile collection of data.
+(4)
+Integrated means the warehouse is a centralized, consolidated database that integrates data derived from the entire organization and from multiple sources with diverse formats. []
+Subject-oriented means the data are arranged and optimized to provide answers to questions coming from diverse functional areas and are summarized by topic. []
+Time variant means warehouse data represent the flow of data through time. 
+Non-volatile means the data is never removed once it enters the warehouse.</p>
+        <hr/>
+        <p> Data marts is Small, single-subject data warehouse subset
+</p>
+        </section>
 
     <section id="preprocessing">
         <h2>2.15–2.23: Preprocessing</h2>
-        <p>Check for missing values:</p>
-        <pre><code>df.isna().sum()</code></pre>
-        <p>Impute missing values (e.g., median for ratings):</p>
-        <pre><code>df['rating'].fillna(df['rating'].median(), inplace=True)</code></pre>
-        <p>Drop unnecessary columns:</p>
-        <pre><code>df.drop(['unwanted_column'], axis=1, inplace=True)</code></pre>
-        <p>Convert text to numeric using one-hot encoding:</p>
-        <pre><code>df = pd.get_dummies(df, columns=['column_name'])</code></pre>
-        <p>Plot a correlation heatmap:</p>
-        <pre><code>import seaborn as sns
-import matplotlib.pyplot as plt
-sns.heatmap(df.corr(), annot=True, cmap='coolwarm')
-plt.show()</code></pre>
-        <p>Scale data:</p>
-        <pre><code>from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-df_scaled = scaler.fit_transform(df)</code></pre>
-        <p>Export to CSV:</p>
-        <pre><code>df.to_csv('processed_data.csv', index=False)</code></pre>
+        <p>You must ensure that the data that is loaded into warehouse is high-quality, accurate, relevant, useful and accessible []. Extraction takes pre-selected data fields from a number of sources[] ready for transformation and loading into the warehouse. Data can be operational, historical, internal or external. []
+Once the data has been determined, each selected attribute must be mapped into the data warehouse []. Aims to eliminate any data anomalies [] found in the extracted data. Scrubs (cleans) the data and standardizes it. []
+Data is moved into the data warehouse. []First load time takes place once and is used to initially load historical data. Thereafter the data must be refreshed []</p>
+        <hr/>
+        <p>Three main characteristics of OLAP:
+Multidimensional data analysis techniques
+Advanced database support
+Easy-to-use end-user interfaces
+Support client/server architecture
+</p>
+        <p>Cloud computing services is A computing model for enabling ubiquitous, convenient, on-demand network access to a shared pool of configurable computer resources (networks, servers, storage)
+</p>
+        <hr/>
+        <p>
+            cloud implementation types: 
+            Public cloud []
+– Built by a third-party organization to sell cloud services to the public []
+• Private cloud []
+– Internal cloud built by an organization for the sole purpose of servicing its own needs []
+• Community cloud []
+– Built by and for a specific group of organizations that share a common trade []</p>
+        <hr/>
+        <p> 
+            characteristics of cloud services:
+            Ubiquitous access via Internet technologies
+Shared infrastructure
+Lower costs and variable pricing
+Flexible and scalable services
+Dynamic provisioning
+Service orientation
+Managed operations</p>
+
+        <hr/>
+    <p> types of cloud services 
+    </p>
+        <p>
+            Software as a Service (SaaS)
+Cloud service provider offers turnkey applications that run in the cloud
+Consumers can run the provider’s applications internally in their organizations via the Web or any mobile device
+Consumers can customize aspects of the application
+Application is actually shared among users from multiple organizations
+
+        </p>
+        <p>
+            Platform as a Service (PaaS)
+Cloud service provider offers the capability to build and deploy consumer created applications using the provider’s cloud infrastructure
+Consumer can build, deploy and manage applications using the provider’s cloud tools
+Consumer does not manage the underlying infrastructure
+
+        </p>
+        <p>Infrastructure as a Service (IaaS)
+Cloud service provider offers consumers the ability to provision their own resources on demand, including storage, servers, database
+ </p>
+        <p> advantages of cloud services
+        Low initial cost of entry
+Scalability
+Support for mobile computing
+Ubiquitous access
+High reliability and performance
+Fast provisioning
+Managed infrastructure</p>
+
+        <p>disadvantages
+        Issues of security, privacy and compliance
+Hidden costs of implementation and operation
+Data migration is a difficult and lengthy process
+Complexing licensing schemes
+Loss of ownership and control
+Organization culture
+Difficult integration with internal IT system</p>
     </section>
 
     <footer>
