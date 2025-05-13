@@ -13,15 +13,66 @@
 
     <section id="data-inspection">
         <hr/>
-        <p>empty
+        <p>import numpy as np 
+import matplotlib.pyplot as plt
+            import pandas as pd
+            import seaborn as sns
+            meds = pd.read_csv("medicine.csv")
+        meds.head()
+
+            when dealing with the second parts:
+            -statistical summary - meds.describe(include="all")
+-to change column name: currency.rename(columns = {'Country' : 'CountryOfOrigin'}, inplace = True)
+currency.head()
+-to Display the number of unique values for each feature: currency.nunique()
+            -Getting a concise summary: meds.info()
+            -Checking for any missing values.: meds.isnull().sum()
+-Discard first and last 7 columns: meds = meds.iloc[:, 1:-7]
+            -drop first col: meds = meds.drop(meds.columns[3], axis=1)
+-Count records per medication : meds['Medication'].value_counts() 
 </p>
         
     </section>
 
     <section id="game-outcomes">
        <hr/>
-        <p>empty
-</p>
+        <p>visualizing the data:
+-box plots: sns.boxplot(data = df[['Weight(mg)', 'Length(mm)', 'Width(mm)', 'Thickness(mm)']])
+plt.show()
+            -to Removes all rows where the 'Thickness(mm)' column has values greater than 1: currency.drop(currency[currency['Thickness(mm)'] > 1].index, inplace = True)
+-scatter plot: 
+# Create the scatter plot using seaborn
+sns.scatterplot(data=meds, x='Age', y='Ratio_Na_K', hue='Medication')
+# Add axis labels and title
+plt.xlabel('Age')
+plt.ylabel('Ratio_Na_K')
+plt.title('Scatter Plot of Age vs Ratio_Na_K by Medication')
+plt.show()
+            categorical plot: sns.countplot(
+    data=dfcus,
+    x="Education_Level",
+    hue="Card_Category"
+)
+
+# Add necessary labels
+plt.title("Customers by Card Category and Education Level")
+plt.xlabel("Education Level")
+plt.ylabel("Count")
+plt.legend(title="Card Category")
+
+plt.show()
+            -histogram: sns.histplot(data=meds, x='Age', bins=20, kde=True)
+
+# Add labels
+plt.xlabel('Age')
+plt.ylabel('Number of Patients')
+plt.title('Distribution of Age')
+
+# Show plot
+plt.show()
+
+        </p>
+        <p></p>
         
     </section>
 
