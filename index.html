@@ -17,6 +17,7 @@
 import matplotlib.pyplot as plt
             import pandas as pd
             import seaborn as sns
+            from sklearn.utils import resample
             meds = pd.read_csv("medicine.csv")
         meds.head()
 
@@ -30,6 +31,9 @@ currency.head()
 -Discard first and last 7 columns: meds = meds.iloc[:, 1:-7]
             -drop first col: meds = meds.drop(meds.columns[3], axis=1)
 -Count records per medication : meds['Medication'].value_counts() 
+            reducing the sample size of the dataframe w/o replacement: currency = currency.sample(frac = 0.01, replace = False, random_state = 7)
+currency.reset_index(inplace = True, drop = True)
+currency.shape 
 </p>
         
     </section>
@@ -72,35 +76,371 @@ plt.title('Distribution of Age')
 plt.show()
 
         </p>
-        <p></p>
+        <p>balancing the data: 
+            -pie chart: # Count the number of records for each medication
+med_counts = meds['Medication'].value_counts()
+
+# Create a pie chart
+plt.figure(figsize=(6,6))
+plt.pie(
+    med_counts,
+    labels=med_counts.index,
+    autopct='%.2f%%',  # Round percentages to 2 decimals
+    startangle=90
+)
+plt.title('Distribution of Medications')
+plt.axis('equal')  # Make the pie chart circular
+plt.show()
+            -underssampling: from sklearn.utils import resample
+
+# Separate majority (existing) and minority (attrited) classes
+df_majority = dfcus[dfcus['Attrition_Flag'] == 'Existing Customer']
+df_minority = dfcus[dfcus['Attrition_Flag'] == 'Attrited Customer']
+
+# Undersample the majority class to match minority count
+df_majority_downsampled = resample(df_majority,
+                                   replace=False,    # Without replacement
+                                   n_samples=len(df_minority),  # Match minority size
+                                   random_state=42)  # For reproducibility
+
+# Combine the downsampled majority with minority
+dfcus_resampled = pd.concat([df_majority_downsampled, df_minority])
+
+# Verify new class counts
+print(dfcus_resampled['Attrition_Flag'].value_counts())
+            oversampling: from sklearn.utils import resample
+
+# Step 1: Separate the data by medication class
+classes = [group for _, group in meds.groupby('Medication')]
+
+# Step 2: Determine the maximum class size
+max_size = max(len(group) for group in classes)
+
+# Step 3: Oversample each class to match the max size
+resampled_classes = [
+    resample(group, replace=True, n_samples=max_size, random_state=1)
+    for group in classes
+]
+
+# Step 4: Combine them into one DataFrame
+meds_resampled = pd.concat(resampled_classes)
+
+# Step 5 (Optional): Shuffle the rows
+meds_resampled = meds_resampled.sample(frac=1, random_state=1).reset_index(drop=True)
+
+# Check the new class distribution
+print(meds_resampled['Medication'].value_counts())
+
+        </p>
         
     </section>
 
     <section id="game-analysis">
        <hr/>
-        <p>empty</p>
+        <p>converting text to numeric vakues:
+binary[0,1] and Convert the columns that contain more than two unique text values to a
+vector space using one-hot encoding.: from sklearn.preprocessing import LabelEncoder
+
+# Binary encode columns with exactly 2 categories
+binary_cols = [col for col in dfcus_resampled.select_dtypes(include=['object']) 
+               if dfcus_resampled[col].nunique() == 2]
+
+for col in binary_cols:
+    le = LabelEncoder()
+    dfcus_resampled[col] = le.fit_transform(dfcus_resampled[col])  # Converts to 0/1 
+        # One-hot encode remaining categorical columns (>2 categories)
+cat_cols = dfcus_resampled.select_dtypes(include=['object']).columns
+dfcus_resampled = pd.get_dummies(dfcus_resampled, columns=cat_cols, drop_first=True)
+
+# Verify transformation
+print("Binary encoded columns:", binary_cols)
+print("\nSample of transformed data:")
+print(dfcus_resampled.iloc[:3, :5])  # Show first 3 rows and 5 columns 
+
+-another way with unique being 1-n, without getdummies: # Loop through all object (text) columns
+for col in meds_resampled.select_dtypes(include='object').columns:
+    
+    # If the column has exactly 2 unique values, map them to 0 and 1
+    if meds_resampled[col].nunique() == 2:
+        unique_vals = meds_resampled[col].unique()
+        meds_resampled[col] = meds_resampled[col].map({unique_vals[0]: 0, unique_vals[1]: 1})
+    
+    # If the column has more than 2 unique values, convert to numeric codes (0, 1, 2, ...)
+    elif meds_resampled[col].nunique() > 2:
+        meds_resampled[col] = meds_resampled[col].astype('category').cat.codes
+
+# Optional: Check that all text columns have been converted
+print(meds_resampled.dtypes)
+print(meds_resampled.head())
+        
+        Confirm that there are no more columns of type object.: print(f"Number of columns with data type 'object': {len(currency_clean.dtypes[currency_clean.dtypes == 'object'])}")</p>
         <hr/>
         <p> 
+o create a heatmap that depicts the correlation between Medication and the other data columns: # Compute the correlation matrix
+correlation_matrix = meds_resampled.corr()
+
+# Create a heatmap of the correlation matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
+
+# Add title
+plt.title('Correlation Heatmap', fontsize=16)
+
+# Display the plot
+plt.show()
+            interpretation of heat map: Variable	Correlation with Medication	Interpretation
+Age	0.15	Very weak positive trend (likely negligible).
+Gender	-0.32	Weak negative correlation (e.g., one gender may prefer certain medications).
+Blood_Pressure	0.45	Moderate positive correlation (higher BP linked to specific meds).
+Cholesterol	0.08	No meaningful relationship.
+Ratio_Na_K	0.62	Strong positive correlation (certain meds may affect electrolyte balance).
 </p>
         </section>
 
     <section id="preprocessing">
         
-        <p>empty<hr/>
+        <p>training and testing data: 
+            -with x and y included: from sklearn.model_selection import train_test_split
+
+# Define features and target
+X = meds_resampled.drop('Medication', axis=1)
+y = meds_resampled['Medication']
+
+# Split into train and test sets (80/20)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+# The input data needs to be scaled,
+# but to avoid data leakage the train and test data must be scaled separately
+# Lose 3 marks if the data is not scaled
+# Lose 2 marks if the data is first scaled and then split
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler()
+
+# Fit on train, transform both
+scaler.fit(X_train)
+X_train = scaler.transform(X_train)
+
+scaler.fit(X_test)
+X_test = scaler.transform(X_test)
+
+# Check the shapes
+print(X_train.shape)
+print(X_test.shape)
+            
+-with just xtrain and xtest: from sklearn.model_selection import train_test_split
+
+X = currency_clean.drop('Counterfeit', axis = 1)
+y = currency_clean['Counterfeit']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 7)
+
+#The input data needs to be scaled, 
+#but to avoid data leakage the train and test data needs to be scaled separately
+#Lose 3 marks if the data is not scaled
+#Lose 2 marks if the data is first scaled and then split
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler()
+
+scaler.fit(X_train)
+X_train = scaler.transform(X_train)
+scaler.fit(X_test)
+X_test = scaler.transform(X_test)
+
+print(X_train.shape)
+print(X_test.shape) </p>
         <p>
+            training classifiers:
+-with just xtrain and xtest: • Naïve Bayes (default values).
+• Logistic Regression (default values).
+• Support Vector Machine (gamma = auto).
+• Set k = 5 for the k-fold cross-validation.
+• Report the cross-validated training accuracy and F1 scores
+for all the classifiers.
+• Draw a learning curve for each of the classifiers.
+from sklearn.naive_bayes import GaussianNB
+#from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+#from sklearn.ensemble import RandomForestClassifier
+#from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import learning_curve
+
+models = []
+
+#models.append(('KNN', KNeighborsClassifier()))
+models.append(('LR', LogisticRegression()))
+#models.append(('TREE', DecisionTreeClassifier()))
+#models.append(('FOREST', RandomForestClassifier(n_estimators=5, random_state=42)))
+models.append(('NB', GaussianNB()))
+models.append(('SVM', SVC(gamma = 'auto')))
+
+results = []
+names = []
+
+for name, model in models:
+    kfold = KFold(n_splits = 5, random_state = 7, shuffle = True)
+    cv_results = cross_val_score(model, X_train, y_train, cv = kfold, scoring = 'accuracy')
+    results.append(cv_results)
+    names.append(name)
+    msg = '%s(acc): %f (%f)' % (name, cv_results.mean(), cv_results.std())
+    print(msg)
+    cv_results = cross_val_score(model, X_train, y_train, cv = kfold, scoring = 'f1')
+    results.append(cv_results)
+    names.append(name)
+    msg = '%s(f1): %f (%f)' % (name, cv_results.mean(), cv_results.std())
+    print(msg)
+    
+    train_sizes, train_scores, validation_scores = learning_curve(estimator = model,
+                                                              X = X_train,
+                                                              y = y_train,
+                                                              train_sizes = np.linspace(0.01, 1.0, 20),
+                                                              cv = kfold,
+                                                              scoring = 'accuracy')
+    mean_training = np.mean(train_scores, axis=1)
+    mean_testing = np.mean(validation_scores, axis=1)
+
+    plt.plot(train_sizes, mean_training, '--', color = "b",  label = "Training score")
+    plt.plot(train_sizes, mean_testing, color = "g", label = "Cross-validation score")
+    plt.title(f"Learning Curve for the " + name + " Classifier")
+    plt.xlabel("Training Set Size"), plt.ylabel("Accuracy Score"), plt.legend(loc = "best")
+    plt.tight_layout()
+    plt.show() 
 </p>
         
         <hr/>
         <p>
-           empty <hr/>
-        <p> 
-            empty</p>
+           with those 4 and not 2(idk if it matters): 4 Train the following classifiers and determine the best model by using k-fold
+cross-validation: (8)
+o K nearest neighbour (default k-value).
+o Decision tree (default values).
+o Random forest (with 5 trees).
+CSIS3764 Semester Test 2 – 2022 .... Page 4 of 4
+o Set k = 5 for the k-fold cross-validation.
+o Report the cross-validated training accuracy and F1 scores for all the
+classifiers.: #Lose 1 mark for every library that is imported and not used by the student (lose max 3 marks)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import learning_curve
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+models = []
+
+# Required classifiers for the question
+models.append(('KNN', KNeighborsClassifier()))  # default k
+models.append(('TREE', DecisionTreeClassifier()))  # default values
+models.append(('FOREST', RandomForestClassifier(n_estimators=5, random_state=42)))  # 5 trees
+
+results = []
+names = []
+
+for name, model in models:
+    kfold = KFold(n_splits=5, random_state=7, shuffle=True)
+    
+    # Cross-validated Accuracy
+    cv_results = cross_val_score(model, X_train, y_train, cv=kfold, scoring='accuracy')
+    results.append(cv_results)
+    names.append(name)
+    msg = '%s (Accuracy): %f (%f)' % (name, cv_results.mean(), cv_results.std())
+    print(msg)
+    
+    # Cross-validated F1 Score
+    cv_results = cross_val_score(model, X_train, y_train, cv=kfold, scoring='f1_weighted')
+    results.append(cv_results)
+    names.append(name)
+    msg = '%s (F1): %f (%f)' % (name, cv_results.mean(), cv_results.std())
+    print(msg)
+    
+    # Learning curve
+    train_sizes, train_scores, validation_scores = learning_curve(estimator=model,
+                                                                   X=X_train,
+                                                                   y=y_train,
+                                                                   train_sizes=np.linspace(0.01, 1.0, 20),
+                                                                   cv=kfold,
+                                                                   scoring='accuracy')
+    mean_training = np.mean(train_scores, axis=1)
+    mean_validation = np.mean(validation_scores, axis=1)
+
+    plt.plot(train_sizes, mean_training, '--', color="b", label="Training score")
+    plt.plot(train_sizes, mean_validation, color="g", label="Cross-validation score")
+    plt.title(f"Learning Curve for {name} Classifier")
+    plt.xlabel("Training Set Size")
+    plt.ylabel("Accuracy Score")
+    plt.legend(loc="best")
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
+
+ 
+        </p> 
+        <p>Select the model that produced the highest F1 score to do the
+following: (3)
+• Make predictions using the test dataset.
+• Provide the test accuracy score, confusion matrix and
+classification report of the model.
+if its svm: from sklearn import metrics
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
+model = SVC(gamma = 'auto')
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+
+print(metrics.accuracy_score(predictions, y_test))
+print(confusion_matrix(y_test, predictions))
+print(classification_report(y_test, predictions)) </p>
+            
 
         <hr/>
-    <p> empty
+    <p> discssing model metrics:
+1. Training vs Testing Accuracy
+
+The model's training accuracy was likely 100%, and the testing accuracy is 0.989 (or 98.9%).
+This small drop suggests that the model generalizes very well and is not overfitting. It performs almost equally well on unseen data, which means it has learned the underlying patterns effectively without memorizing the training data.
+
+2. Understanding Precision, Recall, and F1-Score
+
+Precision is the proportion of predicted positives that are actually correct.
+Example: For class 2, precision is 0.95 – meaning 95% of predicted class 2 values were truly class 2.
+
+Recall is the proportion of actual positives that were correctly predicted.
+For class 4, recall is 0.95 – meaning 95% of the actual class 4 instances were correctly predicted.
+
+F1-Score is the harmonic mean of precision and recall, providing a single score that balances both.
+F1-scores are close to 1.00 for all classes, which confirms that the model is doing exceptionally well at both identifying and correctly classifying each class.
+
+In conclusion, the model demonstrates high performance, with nearly perfect precision, recall, and F1-scores across all classes. There is no major sign of bias or underperformance for any particular class, which makes this a strong and reliable classifier for the dataset used.
     </p>
         <p>
-            empty
+            Given the test accuracy is 0.4915, this is fairly low and indicates that the model isn't performing well on the test data. The F1-score for this model is 0.541829, which is still low, suggesting that the model struggles to correctly classify instances
+       Precision:
+Precision refers to the proportion of positive predictions that were actually correct. It answers the question: Of all the instances the model predicted as positive, how many were actually positive?
+
+For Class 0 (negative class), the precision is 0.51. This means that of all the instances predicted as negative, 51% were correct. The higher the precision, the fewer false positives.
+
+For Class 1 (positive class), the precision is 0.48, which indicates that 48% of instances predicted as positive were actually correct.
+
+Recall:
+Recall refers to the proportion of actual positives that were correctly identified. It answers the question: Of all the instances that were actually positive, how many did the model correctly predict as positive?
+
+For Class 0, the recall is 0.34. This means that 34% of the actual negative instances were correctly identified as negative by the model. A lower recall value indicates that many of the actual negatives were missed.
+
+For Class 1, the recall is 0.65, meaning the model identified 65% of the actual positive instances correctly. A higher recall indicates that fewer true positives were missed.
+
+F1-Score:
+F1-Score is the harmonic mean of precision and recall. It balances the trade-off between precision and recall, especially when you want to consider both false positives and false negatives equally. It's a good metric when you have class imbalance or when both false positives and false negatives are costly.
+
+For Class 0, the F1-score is 0.41, which means there is a moderate trade-off between precision and recall, but it's not great.
+
+For Class 1, the F1-score is 0.55, which indicates a somewhat better balance between precision and recall.
+        
         </p>
        
         
